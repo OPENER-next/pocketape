@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:pocketape/arkitTracer.dart';
-// ignore: depend_on_referenced_packages
+import 'package:pocketape/arkit_tracer.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 
@@ -26,18 +25,32 @@ class MeasurementScreen extends StatefulWidget {
 }
 
 class _MeasurementScreenState extends State<MeasurementScreen> {
-  late Stream<Vector3> _stream;
   Vector3? _firstValue;
   Vector3? _lastValue;
-  double distance = 0.00;
-  late StreamSubscription<Vector3> _subscription;
-  bool _isMeasuring = false;
+  late StreamSubscription<Vector3>? _subscription;
+  bool get isMeasuring => _subscription != null;
+  double _distance = 0.0;
+  String _replacementResult = '';
 
   @override
   void initState() {
     super.initState();
-    _stream = ArkitTracer.trace();
-     _subscription = _stream.listen(
+    _subscription = null;
+  }
+
+  void _toggleMeasurement() {
+    if (isMeasuring) {
+      _stopMeasurement();
+    } else {
+      _firstValue = null;
+      _lastValue = null;
+      _startMeasurement();
+    }
+  }
+
+  void _startMeasurement() {
+    if (!isMeasuring) {
+      _subscription = ArkitTracer.trace().listen(
         (position) {
           setState(() {
             if (_firstValue == null) {
@@ -45,6 +58,8 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
             }
             else {
               _lastValue = position;
+              _distance = _firstValue!.distanceTo(_lastValue!);
+              _ajustMeasurement();
             }
           });
         },
@@ -52,64 +67,49 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
         onDone: () {
         },
       );
-      _subscription.pause();
-  }
-
-  void _toggleMeasurement() {
-    if (_isMeasuring) {
-      _stopMeasurement();
-    } else {
-      setState(() {
-        _firstValue = null;
-        _lastValue = null;
-      });
-      _startMeasurement();
     }
   }
 
-  void _startMeasurement() {
-    if (!_isMeasuring) {
-      setState(() {
-        _isMeasuring = true;
-      });
-      _subscription.resume();
+  void _ajustMeasurement() {
+    var difX = (_lastValue!.x - _firstValue!.x).abs();
+    var difZ = (_lastValue!.z - _firstValue!.z).abs();
+    var difY = (_lastValue!.y - _firstValue!.y).abs();
+    if (difY > difZ && difY > difX) {
+      var newEnd = Vector3(_firstValue!.x, _lastValue!.y, _firstValue!.z);
+      var newDistance = _firstValue!.distanceTo(newEnd);
+      _replacementResult = "Vertical measure: ${newDistance.toStringAsFixed(2)}";
+    }
+    else{ 
+      var newEnd = (difZ < difX)
+          ? Vector3(_lastValue!.x, _firstValue!.y, _firstValue!.z)
+          : Vector3(_firstValue!.x, _firstValue!.y, _lastValue!.z);
+      var newDistance = _firstValue!.distanceTo(newEnd);
+      _replacementResult = "Horizontal measure: ${newDistance.toStringAsFixed(2)}";
     }
   }
 
   void _stopMeasurement() {
-    if (_isMeasuring) {
-      _subscription.pause();
+    if (isMeasuring) {
+      _subscription!.cancel();
       setState(() {
-        _isMeasuring = false;
-        if (_firstValue != null && _lastValue != null) {
-          distance = calculateDistance(_firstValue!, _lastValue!);
-        }
+        _subscription = null;
       });
     }
   }
-
-  double calculateDistance(Vector3 from, Vector3 to) {
-    final deltaX = to.x - from.x;
-    final deltaY = to.y - from.y;
-    final deltaZ = to.z - from.z;
-    
-    return sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
-  } 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('ARKit Measurement')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text('First Value:'),
             const SizedBox(height: 16),
             Text(
-              'X: ${_firstValue?.x.toStringAsFixed(2)}\n'
-              'Y: ${_firstValue?.y.toStringAsFixed(2)}\n'
+              'X: ${_firstValue?.x.toStringAsFixed(2)}, '
+              'Y: ${_firstValue?.y.toStringAsFixed(2)},'
               'Z: ${_firstValue?.z.toStringAsFixed(2)}',
               style: const TextStyle(fontSize: 20),
             ),
@@ -117,18 +117,20 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
             const Text('Latest Value:'),
             const SizedBox(height: 16),
             Text(
-              'X: ${_lastValue?.x.toStringAsFixed(2)}\n'
-              'Y: ${_lastValue?.y.toStringAsFixed(2)}\n'
+              'X: ${_lastValue?.x.toStringAsFixed(2)}, '
+              'Y: ${_lastValue?.y.toStringAsFixed(2)}, '
               'Z: ${_lastValue?.z.toStringAsFixed(2)}',
               style: const TextStyle(fontSize: 20),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _toggleMeasurement,
-              child: Text(_isMeasuring ? 'Stop' : 'Start'),
+              child: Text(isMeasuring ? 'Stop' : 'Start'),
             ),
             const SizedBox(height: 32),
-            Text('Distance: ${distance.toStringAsFixed(2)} meters'),
+            Text('Free Distance: ${_distance.toStringAsFixed(2)} meters'),
+            const SizedBox(height: 32),
+            Text('Coodinate Replacement: \n$_replacementResult'),
           ],
         ),
       ),
@@ -137,8 +139,9 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
 
   @override
   void dispose() {
-    if (_isMeasuring) {
-      _subscription.cancel();
+    if (isMeasuring) {
+      _subscription!.cancel();
+      _subscription = null;
     }
     super.dispose();
   }

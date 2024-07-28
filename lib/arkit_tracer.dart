@@ -38,14 +38,11 @@ abstract class ArkitTracer {
   }
 
   static Vector3 _parse(dynamic event) {
+    List<Object?> coordinates = event;
 
-    var input = event.toString();
-    input = input.replaceAll('[', '').replaceAll(']', '').replaceAll(' ', '');
-    List<String> parts = input.split(',');
-
-    double x = double.parse(parts[0].trim());
-    double y = double.parse(parts[1].trim());
-    double z = double.parse(parts[2].trim());
+    double x = coordinates[0]! as double;
+    double y = coordinates[1]! as double;
+    double z = coordinates[2]! as double;
 
     Vector3 vector = Vector3(x, y, z);
     return vector;

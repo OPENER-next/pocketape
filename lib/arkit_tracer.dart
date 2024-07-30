@@ -5,8 +5,8 @@ import 'package:vector_math/vector_math_64.dart';
 
 abstract class ArkitTracer {
 
-  static const _platformChannel = MethodChannel('arkit_channel');
-  static const _eventChannel = EventChannel('arkit_events');
+  static const _platformChannel = MethodChannel('ar_channel');
+  static const _eventChannel = EventChannel('ar_events');
 
   // count how many listeners are registered
   static int _count = 0;

@@ -37,6 +37,14 @@ abstract class Pocketape {
     return controller.stream;
   }
 
+  static Stream<({Vector3 from, Vector3 to})> traceRange() {
+    Vector3? first;
+    return trace().map((pos) {
+      first ??= pos;
+      return (from: first!, to: pos);
+    });
+  }
+
   static Vector3 _parse(dynamic event) {
     List<Object?> coordinates = event;
 

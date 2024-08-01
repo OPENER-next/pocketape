@@ -1,6 +1,6 @@
-# example
+# pocketape_example
 
-A new Flutter project.
+Demonstrates how to use the pocketape plugin.
 
 ## Getting Started
 

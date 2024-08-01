@@ -8,7 +8,6 @@ class ARKitManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
     var trackingStateOK: Bool = false
     var lastFrame: ARFrame!
     var currentPosition: SIMD4<Float>!
-    var distance:Float = 0.00;
     
     override init() {
         super.init()

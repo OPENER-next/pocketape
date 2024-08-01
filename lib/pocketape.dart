@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-abstract class ArkitTracer {
+abstract class Pocketape {
 
   static const _platformChannel = MethodChannel('ar_channel');
   static const _eventChannel = EventChannel('ar_events');

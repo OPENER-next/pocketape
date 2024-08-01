@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:pocketape/arkit_tracer.dart';
+import 'package:pocketape/pocketape.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 
@@ -41,7 +41,7 @@ class _MeasurementScreenState extends State<MeasurementScreen> {
 
   void _startMeasurement() {
     if (!isMeasuring) {
-      _subscription = ArkitTracer.trace().listen(
+      _subscription = Pocketape.trace().listen(
         (position) {
           setState(() {
             if (_firstValue == null) {

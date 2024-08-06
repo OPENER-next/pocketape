@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pocketape/pocketape.dart';
 import 'package:vector_math/vector_math_64.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,8 +12,17 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  Future<bool> _checkCameraPermission() async {
+    var status = await Permission.camera.status;
+    if (!status.isGranted) {
+      status = await Permission.camera.request();
+    }
+    return status.isGranted;
+  }
+
   @override
   Widget build(BuildContext context) {
+    _checkCameraPermission();
     return const MaterialApp(
       home: MeasurementScreen(),
     );

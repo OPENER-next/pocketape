@@ -3,33 +3,73 @@ package com.example.pocketape
 import androidx.annotation.NonNull
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.*
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
-/** PocketapePlugin */
-class PocketapePlugin: FlutterPlugin, MethodCallHandler {
-  /// The MethodChannel that will the communication between Flutter and native Android
-  ///
-  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-  /// when the Flutter Engine is detached from the Activity
-  private lateinit var channel : MethodChannel
+class PocketapePlugin : FlutterPlugin, MethodCallHandler {
 
-  override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "pocketape")
-    channel.setMethodCallHandler(this)
-  }
+    private lateinit var channel: MethodChannel
+    private lateinit var eventChannel: EventChannel
+    private var arCoreManager: ARCoreManager? = null
+    private var eventHandler: MyStreamHandler? = null
 
-  override fun onMethodCall(call: MethodCall, result: Result) {
-    if (call.method == "getPlatformVersion") {
-      result.success("Android ${android.os.Build.VERSION.RELEASE}")
-    } else {
-      result.notImplemented()
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        val messenger = flutterPluginBinding.binaryMessenger
+        channel = MethodChannel(messenger, "ar_channel")
+        eventChannel = EventChannel(messenger, "ar_events")
+
+        channel.setMethodCallHandler(this)
+
+        arCoreManager = ARCoreManager(flutterPluginBinding.applicationContext, this)
+        eventHandler = MyStreamHandler()
+        eventChannel.setStreamHandler(eventHandler)
     }
-  }
 
-  override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
-  }
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        val ARCoreManager = arCoreManager ?: run {
+            result.error("UNAVAILABLE", "ARCoreManager not available", null)
+            return
+        }
+
+        when (call.method) {
+            "startMeasure" -> {
+                ARCoreManager.startSession()
+                result.success(null)
+            }
+            "stopMeasure" -> {
+                ARCoreManager.stopSession()
+                result.success(null)
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding)  {
+        channel.setMethodCallHandler(null)
+        eventChannel.setStreamHandler(null)
+    }
+
+    fun sendEventToFlutter(value: Any) {
+        eventHandler?.sendEvent(value)
+    }
+}
+
+class MyStreamHandler : StreamHandler {
+    private var eventSink: EventSink? = null
+
+    override fun onListen(arguments: Any?, events: EventSink?) {
+        eventSink = events
+    }
+
+    override fun onCancel(arguments: Any?) {
+        eventSink = null
+    }
+
+    fun sendEvent(event: Any) {
+        eventSink?.success(event)
+    }
 }

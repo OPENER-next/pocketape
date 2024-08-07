@@ -10,12 +10,12 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
-class PocketapePlugin : FlutterPlugin, MethodCallHandler {
+class PocketapePlugin : FlutterPlugin, MethodCallHandler, StreamHandler {
 
     private lateinit var channel: MethodChannel
     private lateinit var eventChannel: EventChannel
     private var arCoreManager: ARCoreManager? = null
-    private var eventHandler: MyStreamHandler? = null
+    private var eventSink: EventSink? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         val messenger = flutterPluginBinding.binaryMessenger
@@ -25,23 +25,24 @@ class PocketapePlugin : FlutterPlugin, MethodCallHandler {
         channel.setMethodCallHandler(this)
 
         arCoreManager = ARCoreManager(flutterPluginBinding.applicationContext, this)
-        eventHandler = MyStreamHandler()
-        eventChannel.setStreamHandler(eventHandler)
+        eventChannel.setStreamHandler(this)
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        val ARCoreManager = arCoreManager ?: run {
+        val arCoreManager = arCoreManager ?: run {
             result.error("UNAVAILABLE", "ARCoreManager not available", null)
             return
         }
 
         when (call.method) {
             "startMeasure" -> {
-                ARCoreManager.startSession()
+                arCoreManager.startSession()
                 result.success(null)
             }
             "stopMeasure" -> {
-                ARCoreManager.stopSession()
+                eventSink = null
+                eventSink?.endOfStream()
+                arCoreManager.stopSession()
                 result.success(null)
             }
             else -> result.notImplemented()
@@ -51,15 +52,12 @@ class PocketapePlugin : FlutterPlugin, MethodCallHandler {
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding)  {
         channel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)
+        arCoreManager?.onDestroy()
     }
 
     fun sendEventToFlutter(value: Any) {
-        eventHandler?.sendEvent(value)
+        eventSink?.success(value)
     }
-}
-
-class MyStreamHandler : StreamHandler {
-    private var eventSink: EventSink? = null
 
     override fun onListen(arguments: Any?, events: EventSink?) {
         eventSink = events
@@ -67,9 +65,5 @@ class MyStreamHandler : StreamHandler {
 
     override fun onCancel(arguments: Any?) {
         eventSink = null
-    }
-
-    fun sendEvent(event: Any) {
-        eventSink?.success(event)
     }
 }

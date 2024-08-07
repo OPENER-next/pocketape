@@ -7,7 +7,6 @@ class ARKitManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
     
     var trackingStateOK: Bool = false
     var lastFrame: ARFrame!
-    var currentPosition: SIMD4<Float>!
     
     override init() {
         super.init()
@@ -24,8 +23,7 @@ class ARKitManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         if let frame = session.currentFrame {
-            currentPosition = frame.camera.transform.columns.3
-            sendMeasure()
+            sendMeasure(currentPosition: frame.camera.transform.columns.3)
         }
     }
     
@@ -42,7 +40,7 @@ class ARKitManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
         sessionPaused = true
     }
     
-    @objc func sendMeasure() {
+    @objc func sendMeasure(currentPosition: SIMD4<Float>) {
         let vectorArray: [Float] = [currentPosition.x, currentPosition.y, currentPosition.z]
         guard let pluginInstance = PocketapePlugin.shared else {
             print("PocketapePlugin is not available")

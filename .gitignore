@@ -27,3 +27,15 @@ migrate_working_dir/
 **/doc/api/
 .dart_tool/
 build/
+
+# Android related
+**/android/**/gradle-wrapper.jar
+.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+android/gradle/wrapper/gradle-wrapper.properties

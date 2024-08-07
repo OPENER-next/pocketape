@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 abstract class Pocketape {
 
@@ -23,15 +25,20 @@ abstract class Pocketape {
           onDone: controller.close,
         );
         if (_count == 1) {
+          print("Start");
+          if (Platform.isAndroid && !(await _requestPermission())) {
+            controller.addError(CameraPermissionDeniedException("Camera permission denied"));
+            return;
+          }
           await _platformChannel.invokeMethod('startMeasure');
         }
       },
       onCancel: () async {
         _count--;
-        subscription.cancel();
         if (_count == 0) {
           await _platformChannel.invokeMethod('stopMeasure');
         }
+        await subscription.cancel();
       },
     );
     return controller.stream;
@@ -45,14 +52,30 @@ abstract class Pocketape {
     });
   }
 
+  static Future<bool> _requestPermission() async {
+    var status = await Permission.camera.status;
+    if (!status.isGranted) {
+      status = await Permission.camera.request();
+    }
+    return status.isGranted;
+  }
+
   static Vector3 _parse(dynamic event) {
     List<Object?> coordinates = event;
 
     double x = coordinates[0]! as double;
     double y = coordinates[1]! as double;
     double z = coordinates[2]! as double;
-
+    print("$x $y $z");
     Vector3 vector = Vector3(x, y, z);
     return vector;
   }
+}
+
+class CameraPermissionDeniedException implements Exception {
+  final String message;
+  CameraPermissionDeniedException(this.message);
+  
+  @override
+  String toString() => 'CameraPermissionDeniedException: $message';
 }

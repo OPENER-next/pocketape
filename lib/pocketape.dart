@@ -18,6 +18,9 @@ abstract class Pocketape {
     late final StreamController<Vector3> controller;
     controller = StreamController<Vector3>(
       onListen: () async {
+        if (_count == 0 && Platform.isAndroid && !(await _requestPermission())) {
+          controller.addError(CameraPermissionDeniedException("Camera permission is required on Android in order to use ARCore."));
+        }
         _count++;
         subscription = _eventChannel.receiveBroadcastStream().map(_parse).listen(
           controller.add,
@@ -26,10 +29,6 @@ abstract class Pocketape {
         );
         if (_count == 1) {
           print("Start");
-          if (Platform.isAndroid && !(await _requestPermission())) {
-            controller.addError(CameraPermissionDeniedException("Camera permission denied"));
-            return;
-          }
           await _platformChannel.invokeMethod('startMeasure');
         }
       },

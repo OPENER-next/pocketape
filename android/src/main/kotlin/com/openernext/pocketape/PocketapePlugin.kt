@@ -1,4 +1,4 @@
-package com.example.pocketape
+package com.openernext.pocketape
 
 import androidx.annotation.NonNull
 
@@ -52,7 +52,7 @@ class PocketapePlugin : FlutterPlugin, MethodCallHandler, StreamHandler {
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding)  {
         channel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)
-        arCoreManager?.onDestroy()
+        arCoreManager?.stopSession()
     }
 
     fun sendEventToFlutter(value: Any) {

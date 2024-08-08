@@ -5,9 +5,6 @@ class ARKitManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
     private var arSession: ARSession!
     private var sessionPaused = false
     
-    var trackingStateOK: Bool = false
-    var lastFrame: ARFrame!
-    
     override init() {
         super.init()
         setupSceneView()

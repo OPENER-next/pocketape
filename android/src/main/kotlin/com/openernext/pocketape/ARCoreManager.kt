@@ -1,9 +1,8 @@
-package com.example.pocketape
+package com.openernext.pocketape
 
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.google.ar.core.*
 import com.google.ar.core.exceptions.*
@@ -39,14 +38,10 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
         arSceneView?.setupSession(session)
         arSceneView?.scene?.let { scene ->
             updateListener = Scene.OnUpdateListener {
-                arSceneView?.arFrame?.let { frame -> handleFrameUpdate(frame) }
+                arSceneView?.arFrame?.let { frame -> sendMeasure(frame) }
             }
             updateListener?.let { scene.addOnUpdateListener(it) }
         }
-    }
-
-    private fun handleFrameUpdate(frame: Frame) {
-        sendMeasure(frame)
     }
 
     fun startSession() {
@@ -60,33 +55,29 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
                 arSceneView?.resume()
             }
             else {
-                Toast.makeText(context, "Camera permission is required for AR functionality.", Toast.LENGTH_LONG).show()
+                Log.e("pocketape", "Camera permission is required for AR functionality.")
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    fun stopSession() {
+    public fun stopSession() {
         Log.d("MyTag", "Stop")
         session?.pause()
         arSceneView?.pause()
-        onDestroy()
-    }
-
-    private fun sendMeasure(frame: Frame) {
-        var x = frame.camera.displayOrientedPose.translation
-        Log.d("MyTag", "${x[0]} ${x[1]} ${x[2]}")
-        plugin.sendEventToFlutter(x)
-    }
-
-    public fun onDestroy() {
         arSceneView?.scene?.let { scene ->
             updateListener?.let { scene.removeOnUpdateListener(it) }
         }
         arSceneView?.destroy()
         session?.close()
         session = null
+    }
+
+    private fun sendMeasure(frame: Frame) {
+        var x = frame.camera.displayOrientedPose.translation
+        Log.d("MyTag", "${x[0]} ${x[1]} ${x[2]}")
+        plugin.sendEventToFlutter(x)
     }
 }
 

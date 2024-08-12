@@ -45,7 +45,6 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
     }
 
     fun startSession() {
-        Log.d("MyTag", "Start")
         try {
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -63,7 +62,6 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
     }
 
     public fun stopSession() {
-        Log.d("MyTag", "Stop")
         arSceneView?.pause()
         arSceneView?.scene?.let { scene ->
             updateListener?.let { scene.removeOnUpdateListener(it) }
@@ -75,7 +73,6 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
 
     private fun sendMeasure(frame: Frame) {
         var x = frame.camera.displayOrientedPose.translation
-        Log.d("MyTag", "${x[0]} ${x[1]} ${x[2]}")
         plugin.sendEventToFlutter(x)
     }
 }

@@ -29,7 +29,6 @@ abstract class Pocketape {
           onDone: controller.close,
         );
         if (_count == 1) {
-          print("Start");
           await _platformChannel.invokeMethod('startMeasure');
         }
       },
@@ -58,7 +57,6 @@ abstract class Pocketape {
     double x = coordinates[0]! as double;
     double y = coordinates[1]! as double;
     double z = coordinates[2]! as double;
-    print("$x $y $z");
     Vector3 vector = Vector3(x, y, z);
     return vector;
   }

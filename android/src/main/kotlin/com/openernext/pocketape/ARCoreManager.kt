@@ -64,7 +64,6 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
 
     public fun stopSession() {
         Log.d("MyTag", "Stop")
-        session?.pause()
         arSceneView?.pause()
         arSceneView?.scene?.let { scene ->
             updateListener?.let { scene.removeOnUpdateListener(it) }

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 import 'package:vector_math/vector_math_64.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 abstract class Pocketape {
 
@@ -16,6 +18,10 @@ abstract class Pocketape {
     late final StreamController<Vector3> controller;
     controller = StreamController<Vector3>(
       onListen: () async {
+        if (_count == 0 && Platform.isAndroid && !(await Permission.camera.request().isGranted)) {
+          controller.addError(CameraPermissionDeniedException("Camera permission is required on Android in order to use ARCore."));
+          return;
+        }
         _count++;
         subscription = _eventChannel.receiveBroadcastStream().map(_parse).listen(
           controller.add,
@@ -28,10 +34,10 @@ abstract class Pocketape {
       },
       onCancel: () async {
         _count--;
-        subscription.cancel();
         if (_count == 0) {
           await _platformChannel.invokeMethod('stopMeasure');
         }
+        await subscription.cancel();
       },
     );
     return controller.stream;
@@ -51,8 +57,15 @@ abstract class Pocketape {
     double x = coordinates[0]! as double;
     double y = coordinates[1]! as double;
     double z = coordinates[2]! as double;
-
     Vector3 vector = Vector3(x, y, z);
     return vector;
   }
+}
+
+class CameraPermissionDeniedException implements Exception {
+  final String message;
+  CameraPermissionDeniedException(this.message);
+  
+  @override
+  String toString() => 'CameraPermissionDeniedException: $message';
 }

@@ -1,4 +1,4 @@
-package com.example.pocketape
+package com.openernext.pocketape
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel

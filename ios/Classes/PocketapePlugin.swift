@@ -1,11 +1,11 @@
 import Flutter
 import UIKit
 
-public class PocketapePlugin: NSObject, FlutterPlugin {
+public class PocketapePlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
     static var shared: PocketapePlugin?
     private var arKitManager: ARKitManager?
-    private var eventHandler: MyStreamHandler?
+    private var flutterEventSink: FlutterEventSink?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = PocketapePlugin()
@@ -15,8 +15,7 @@ public class PocketapePlugin: NSObject, FlutterPlugin {
         let channel = FlutterMethodChannel(name: "ar_channel", binaryMessenger: registrar.messenger())
         let eventChannel = FlutterEventChannel(name: "ar_events", binaryMessenger: registrar.messenger())
 
-        instance.eventHandler = MyStreamHandler()
-        eventChannel.setStreamHandler(instance.eventHandler)
+        eventChannel.setStreamHandler(instance)
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
 
@@ -31,6 +30,8 @@ public class PocketapePlugin: NSObject, FlutterPlugin {
                 arKitManager.startSession()
                 result(nil)
             case "stopMeasure":
+                flutterEventSink = nil
+                flutterEventSink?(FlutterEndOfEventStream) 
                 arKitManager.stopSession()
                 result(nil)
             default:
@@ -39,26 +40,16 @@ public class PocketapePlugin: NSObject, FlutterPlugin {
     }
   
   func sendEventToFlutter(value: Any) {
-    eventHandler?.sendEvent(event: value)
+    flutterEventSink?(value)
   }
 
-}
+  public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    flutterEventSink = events
+    return nil
+  }
 
-class MyStreamHandler: NSObject, FlutterStreamHandler {
-    
-    func sendEvent(event: Any) {
-        flutterEventSink?(event)
-    }
-    
-    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        flutterEventSink = events
-        return nil
-    }
-    
-    func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        flutterEventSink = nil
-        return nil
-    }
-    
-    private var flutterEventSink: FlutterEventSink?
+  public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    flutterEventSink = nil
+    return nil
+  }
 }

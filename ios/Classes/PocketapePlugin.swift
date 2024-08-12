@@ -11,32 +11,9 @@ public class PocketapePlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         let instance = PocketapePlugin()
         shared = instance
         instance.arKitManager = ARKitManager()
-
-        let channel = FlutterMethodChannel(name: "ar_channel", binaryMessenger: registrar.messenger())
         let eventChannel = FlutterEventChannel(name: "ar_events", binaryMessenger: registrar.messenger())
-
         eventChannel.setStreamHandler(instance)
-        registrar.addMethodCallDelegate(instance, channel: channel)
-    }
-
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let arKitManager = arKitManager else {
-            result(FlutterError(code: "UNAVAILABLE", message: "ARKitManager not available", details: nil))
-            return
-        }
-
-        switch call.method {
-            case "startMeasure":
-                arKitManager.startSession()
-                result(nil)
-            case "stopMeasure":
-                flutterEventSink = nil
-                flutterEventSink?(FlutterEndOfEventStream) 
-                arKitManager.stopSession()
-                result(nil)
-            default:
-            result(FlutterMethodNotImplemented)
-        }
+        instance.arKitManager?.setupSceneView()
     }
   
   func sendEventToFlutter(value: Any) {
@@ -45,10 +22,12 @@ public class PocketapePlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
   public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
     flutterEventSink = events
+    arKitManager?.startSession()
     return nil
   }
 
   public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    arKitManager?.stopSession()
     flutterEventSink = nil
     return nil
   }

@@ -36,12 +36,10 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
     private fun initializeARSceneView() {
         arSceneView = ArSceneView(context)
         arSceneView?.setupSession(session)
-        arSceneView?.scene?.let { scene ->
-            updateListener = Scene.OnUpdateListener {
-                arSceneView?.arFrame?.let { frame -> sendMeasure(frame) }
-            }
-            updateListener?.let { scene.addOnUpdateListener(it) }
+        updateListener = Scene.OnUpdateListener {
+            arSceneView?.arFrame?.let { sendMeasure(it) }
         }
+        arSceneView?.scene?.addOnUpdateListener(updateListener)
     }
 
     public fun startSession() {
@@ -62,11 +60,9 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
     }
 
     public fun stopSession() {
+        arSceneView?.scene?.removeOnUpdateListener(updateListener)
+        updateListener = null
         arSceneView?.pause()
-        arSceneView?.scene?.let { scene ->
-            updateListener?.let { scene.removeOnUpdateListener(it) }
-            updateListener = null
-        }
         arSceneView?.destroy()
         session?.close()
         session = null
@@ -76,4 +72,3 @@ class ARCoreManager(private val context: Context,  private val plugin: Pocketape
         plugin.sendEventToFlutter(frame.camera.displayOrientedPose.translation)
     }
 }
-

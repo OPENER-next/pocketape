@@ -11,7 +11,19 @@ public class PocketapePlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         let instance = PocketapePlugin()
         shared = instance
         instance.arKitManager = ARKitManager()
-        let eventChannel = FlutterEventChannel(name: "ar_events", binaryMessenger: registrar.messenger())
+        let messenger = registrar.messenger()
+        // The _DefaultBinaryMessenger does buffer 1 event, even when no listener is registered.
+        // This causes the problem of a race condition when an event was or is added to the buffer while the stream is being canceled:
+        // eventBuffer = [EventX];
+        // myStream.cancel();
+        // myStream.listen(...); -> returns EventX
+        //
+        // Therefore we disable buffering by setting it to 0
+        // https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html
+        let bufferChannel = FlutterMethodChannel(name: "ar_events", binaryMessenger: messenger)
+        bufferChannel.resizeBuffer(0)
+
+        let eventChannel = FlutterEventChannel(name: "ar_events", binaryMessenger: messenger)
         eventChannel.setStreamHandler(instance)
         instance.arKitManager?.setupSceneView()
     }

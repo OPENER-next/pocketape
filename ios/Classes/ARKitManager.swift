@@ -3,18 +3,10 @@ import ARKit
 
 class ARKitManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
     private var arSession: ARSession!
-    private var sessionPaused = false
+    private var sessionPaused = true
     
-    override init() {
-        super.init()
-        setupSceneView()
-    }
-
-    
-    func setupSceneView() {
+    @objc func setupSceneView() {
         arSession = ARSession()
-        let configuration = ARWorldTrackingConfiguration()
-        arSession.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         arSession.delegate = self
     }
     
@@ -37,12 +29,12 @@ class ARKitManager: NSObject, ARSessionDelegate, ARSCNViewDelegate {
         sessionPaused = true
     }
     
-    @objc func sendMeasure(currentPosition: SIMD4<Float>) {
+    func sendMeasure(currentPosition: SIMD4<Float>) {
         let vectorArray: [Float] = [currentPosition.x, currentPosition.y, currentPosition.z]
         guard let pluginInstance = PocketapePlugin.shared else {
             print("PocketapePlugin is not available")
             return
         }
         pluginInstance.sendEventToFlutter(value: vectorArray)
-    }
+    } 
 }
